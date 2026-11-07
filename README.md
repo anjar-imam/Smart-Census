@@ -137,14 +137,16 @@ The API tests cover OTP sign-in, household/member updates and audit history, agg
 
 ## Deployment
 
-The deployment configuration is included: [`render.yaml`](./render.yaml) creates a Singapore Render API service and persistent PostgreSQL database; [`frontend/vercel.json`](./frontend/vercel.json) configures the Vercel static frontend and React Router fallback. The Render blueprint selects billable `starter` and `basic-256mb` plans. Check current provider pricing before deploying.
+The deployment configuration is included: [`render.yaml`](./render.yaml) creates a Singapore Render API service and persistent PostgreSQL database; [`netlify.toml`](./netlify.toml) configures the Netlify frontend build and React Router fallback. The Render blueprint selects billable `starter` and `basic-256mb` plans. Check current provider pricing before deploying.
 
 1. Push the project to a private GitHub repository. Do not commit `.env` files, production records, or secrets.
 2. In Render, create a new Blueprint from the repository root and review the plan and region before confirming resource creation. Render will prompt for the three `TWILIO_*` values. Enter them in Render's secret environment-variable form; never put credentials in the repository or chat.
-3. After the Render API is healthy at `https://smart-census-api.onrender.com/health`, create a Vercel project from the same repository and set its **Root Directory** to `frontend`. Vercel reads `frontend/vercel.json`. Set the Vercel build-time environment variable `VITE_API_URL` to the Render API origin, e.g. `https://smart-census-api.onrender.com`.
-4. Copy the actual Vercel production origin from project settings, then update Render's `FRONTEND_ORIGINS` environment variable to that exact origin (for example `https://smart-census.vercel.app`) and redeploy the API.
+3. After the Render API is healthy at `https://smart-census-api.onrender.com/health`, create a Netlify site from the same repository. Netlify reads `netlify.toml`; leave the site base/build/publish settings at their detected values and set the build environment variable `VITE_API_URL` to the Render API origin, e.g. `https://smart-census-api.onrender.com`.
+4. Copy the actual Netlify production origin from site settings, then update Render's `FRONTEND_ORIGINS` environment variable to that exact origin and redeploy the API.
 5. Test OTP delivery, household/member creation, public aggregate statistics, and administrator-only CSV export on the deployed services. Only then create the first administrator: sign in with its verified phone number, open Render's Shell for the API service, and run `python -m app.create_admin <verified-mobile-number>`.
 6. Confirm database backups and a restore procedure before entering real household data. Keep API and database access restricted, enforce HTTPS, and review hosting, SMS, backup, and data-retention requirements.
+
+`netlify.toml` configures Netlify to build the `frontend/` Vite application and route React Router paths back to the SPA entry point. Set `VITE_API_URL` in Netlify's site environment variables to the HTTPS origin of the deployed FastAPI API before building. Netlify hosts the frontend only; it does not run this FastAPI backend or provide its PostgreSQL database.
 
 Render's PostgreSQL connection strings (`postgres://` or `postgresql://`) are normalized to the installed `psycopg` driver by the API. The included production checks reject a weak JWT secret and console OTP mode. The Render starter/database resources incur charges; do not create them without reviewing and accepting the current pricing.
 
